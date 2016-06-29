@@ -1,10 +1,10 @@
-default: fmt build
+default: build test
 
 fmt:
 	go fmt github.com/DimensionDataResearch/go-octo-api/...
 
-build:
+build: fmt
 	go build
 
-test:
+test: fmt
 	go test -v github.com/DimensionDataResearch/go-octo-api
