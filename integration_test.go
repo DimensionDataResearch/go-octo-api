@@ -45,7 +45,7 @@ func testRespond(statusCode int, responseBody string) ClientTestRequestHandler {
 func testClientRequest(test *testing.T, clientTest *ClientTest) {
 	testServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		expect := expect(test)
-		expect.singleHeaderValue(HeaderNameOctopusAPIKey, clientTest.APIKey, request)
+		expect.headerValue(HeaderNameOctopusAPIKey, clientTest.APIKey, request)
 
 		statusCode, response := clientTest.Handle(test, request)
 

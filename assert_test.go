@@ -51,19 +51,10 @@ func (expect expectHelper) EqualsInt(description string, expected int, actual in
 	}
 }
 
-func (expect expectHelper) singleHeaderValue(headerName string, expected string, request *http.Request) {
+func (expect expectHelper) headerValue(headerName string, expected string, request *http.Request) {
 	normalisedHeaderName := normaliseHeaderName(headerName)
 
-	headerValues, ok := request.Header[normalisedHeaderName]
-	if !ok {
-		expect.test.Fatalf("Missing request header '%s'.", headerName)
-	}
-
-	if len(headerValues) != 1 {
-		expect.test.Fatalf("Request header '%s' has %d values (expected exactly 1).", headerName, len(headerValues))
-	}
-
-	actual := headerValues[0]
+	actual := request.Header.Get(normalisedHeaderName)
 	expect.EqualsString("Header."+headerName, expected, actual)
 }
 

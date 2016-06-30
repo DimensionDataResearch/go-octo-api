@@ -43,25 +43,6 @@ func NewClientWithAPIKey(serverURL string, apiKey string) (*Client, error) {
 	}, nil
 }
 
-// NewClientWithBasicAuth creates a new Octopus Deploy API client using the specified user name and password for HTTP Basic authentication.
-func NewClientWithBasicAuth(serverURL string, username string, password string) (*Client, error) {
-	if len(username) == 0 {
-		return nil, fmt.Errorf("Must specify a valid Octopus user name.")
-	}
-
-	return &Client{
-		serverURL,
-		&sync.Mutex{},
-		&http.Client{
-			Transport: &usernamePasswordAuthenticator{
-				username:  username,
-				password:  password,
-				transport: defaultTransport(),
-			},
-		},
-	}, nil
-}
-
 // Reset clears all cached data from the Client.
 func (client *Client) Reset() {
 	client.stateLock.Lock()
