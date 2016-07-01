@@ -11,32 +11,44 @@ import (
  * Integration test support
  */
 
+// Configuration for a Client integration test.
 type ClientTest struct {
 	APIKey      string
 	ContentType string
-	Invoke      ClientTestRequestInvoker
-	Handle      ClientTestRequestHandler
+	Request     ClientTestRequester
+	Respond     ClientTestResponder
 }
 
-func newClientTest() *ClientTest {
-	return &ClientTest{
-		APIKey:      "my-test-api-key",
-		ContentType: "application/json",
+// Add default configuration to the client test configuration (if not already specified).
+func (clientTest *ClientTest) AddDefaultConfiguration() *ClientTest {
+	if clientTest.APIKey == "" {
+		clientTest.APIKey = "my-test-api-key"
 	}
+
+	if clientTest.ContentType == "" {
+		clientTest.ContentType = "application/json"
+	}
+
+	return clientTest
 }
 
-type ClientTestRequestInvoker func(test *testing.T, client *Client)
-type ClientTestRequestHandler func(test *testing.T, request *http.Request) (statusCode int, responseBody string)
+// A function that invokes the request(s) for an integration test.
+type ClientTestRequester func(test *testing.T, client *Client)
 
-func testRespondOK(responseBody string) ClientTestRequestHandler {
+// A function that handles requests and generates responses for an integration test.
+type ClientTestResponder func(test *testing.T, request *http.Request) (statusCode int, responseBody string)
+
+// Respond with HTTP OK (200) and the specified response body.
+func testRespondOK(responseBody string) ClientTestResponder {
 	return testRespond(http.StatusOK, responseBody)
 }
 
-func testRespondCreated(responseBody string) ClientTestRequestHandler {
+// Respond with HTTP CREATED (201) and the specified response body.
+func testRespondCreated(responseBody string) ClientTestResponder {
 	return testRespond(http.StatusCreated, responseBody)
 }
 
-func testRespond(statusCode int, responseBody string) ClientTestRequestHandler {
+func testRespond(statusCode int, responseBody string) ClientTestResponder {
 	return func(test *testing.T, request *http.Request) (int, string) {
 		return statusCode, responseBody
 	}
@@ -47,7 +59,7 @@ func testClientRequest(test *testing.T, clientTest *ClientTest) {
 		expect := expect(test)
 		expect.headerValue(HeaderNameOctopusAPIKey, clientTest.APIKey, request)
 
-		statusCode, response := clientTest.Handle(test, request)
+		statusCode, response := clientTest.Respond(test, request)
 
 		writer.Header().Set("Content-Type", clientTest.ContentType)
 		writer.WriteHeader(statusCode)
@@ -61,5 +73,5 @@ func testClientRequest(test *testing.T, clientTest *ClientTest) {
 		test.Fatal(err)
 	}
 
-	clientTest.Invoke(test, client)
+	clientTest.Request(test, client)
 }

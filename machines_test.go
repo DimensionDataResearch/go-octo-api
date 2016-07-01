@@ -12,7 +12,7 @@ import (
 func Test_Client_GetMachine_Success(test *testing.T) {
 	testClientRequest(test, &ClientTest{
 		APIKey: "my-test-api-key",
-		Invoke: func(test *testing.T, client *Client) {
+		Request: func(test *testing.T, client *Client) {
 			machine, err := client.GetMachine("Machines-1")
 			if err != nil {
 				test.Fatal(err)
@@ -20,7 +20,7 @@ func Test_Client_GetMachine_Success(test *testing.T) {
 
 			verifyGetMachineTestResponse(test, machine)
 		},
-		Handle: testRespondOK(getMachineTestResponse),
+		Respond: testRespondOK(getMachineTestResponse),
 	})
 }
 

@@ -12,7 +12,7 @@ import (
 func Test_Client_GetProjectGroup_Success(test *testing.T) {
 	testClientRequest(test, &ClientTest{
 		APIKey: "my-test-api-key",
-		Invoke: func(test *testing.T, client *Client) {
+		Request: func(test *testing.T, client *Client) {
 			projectGroup, err := client.GetProjectGroup("ProjectGroups-49")
 			if err != nil {
 				test.Fatal(err)
@@ -20,7 +20,7 @@ func Test_Client_GetProjectGroup_Success(test *testing.T) {
 
 			verifyGetProjectGroupTestResponse(test, projectGroup)
 		},
-		Handle: testRespondOK(getProjectGroupTestResponse),
+		Respond: testRespondOK(getProjectGroupTestResponse),
 	})
 }
 

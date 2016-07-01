@@ -12,7 +12,7 @@ import (
 func Test_Client_CreateEnvironment_Success(test *testing.T) {
 	testClientRequest(test, &ClientTest{
 		APIKey: "my-test-api-key",
-		Invoke: func(test *testing.T, client *Client) {
+		Request: func(test *testing.T, client *Client) {
 			environment, err := client.CreateEnvironment("TerraformTest", "Terraform test environment", 0)
 			if err != nil {
 				test.Fatal(err)
@@ -20,7 +20,7 @@ func Test_Client_CreateEnvironment_Success(test *testing.T) {
 
 			verifyCreateEnvironmentTestResponse(test, environment)
 		},
-		Handle: testRespondCreated(createEnvironmentTestResponse),
+		Respond: testRespondCreated(createEnvironmentTestResponse),
 	})
 }
 

@@ -99,7 +99,7 @@ func Test_VariableSet_GetVariablesByNameAndEnvironment(test *testing.T) {
 func Test_Client_GetVariableSet_Success(test *testing.T) {
 	testClientRequest(test, &ClientTest{
 		APIKey: "my-test-api-key",
-		Invoke: func(test *testing.T, client *Client) {
+		Request: func(test *testing.T, client *Client) {
 			variableSet, err := client.GetVariableSet("variableset-Projects-501")
 			if err != nil {
 				test.Fatal(err)
@@ -107,7 +107,7 @@ func Test_Client_GetVariableSet_Success(test *testing.T) {
 
 			verifyGetVariableSetTestResponse(test, variableSet)
 		},
-		Handle: testRespondOK(getVariableSetTestResponse),
+		Respond: testRespondOK(getVariableSetTestResponse),
 	})
 }
 

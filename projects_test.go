@@ -12,7 +12,7 @@ import (
 func Test_Client_GetProject_Success(test *testing.T) {
 	testClientRequest(test, &ClientTest{
 		APIKey: "my-test-api-key",
-		Invoke: func(test *testing.T, client *Client) {
+		Request: func(test *testing.T, client *Client) {
 			project, err := client.GetProject("Projects-105")
 			if err != nil {
 				test.Fatal(err)
@@ -20,7 +20,7 @@ func Test_Client_GetProject_Success(test *testing.T) {
 
 			verifyGetProjectTestResponse(test, project)
 		},
-		Handle: testRespondOK(getProjectTestResponse),
+		Respond: testRespondOK(getProjectTestResponse),
 	})
 }
 
