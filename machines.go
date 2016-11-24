@@ -4,7 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
+
+// Machines represents a page of Project results.
+type Machines struct {
+	Items []Machine `json:"Items"`
+
+	PagedResults
+}
 
 // Machine represents a machine that Octopus can target for deployment.
 type Machine struct {
@@ -41,6 +49,46 @@ type TentacleVersionDetails struct {
 	UpgradeLocked    bool   `json:"UpgradeLocked"`
 }
 
+// GetMachines retrieves a page of Octopus machines.
+//
+// skip indicates the number of results to skip over.
+// Call Machines.GetSkipForNextPage() / Machines.GetSkipForPreviousPage() to get the number of items to skip for the next / previous page of results.
+func (client *Client) GetMachines(skip int) (machines *Machines, err error) {
+	var (
+		request       *http.Request
+		statusCode    int
+		responseBody  []byte
+		errorResponse *APIErrorResponse
+	)
+
+	requestURI := fmt.Sprintf("machines?skip=%d", skip)
+	request, err = client.newRequest(requestURI, http.MethodGet, nil)
+	if err != nil {
+		return nil, err
+	}
+	responseBody, statusCode, err = client.executeRequest(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		errorResponse, err = readAPIErrorResponseAsJSON(responseBody, statusCode)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, errorResponse.ToError("Request to retrieve all machines failed with status code %d.", statusCode)
+	}
+
+	machines = &Machines{}
+	err = json.Unmarshal(responseBody, &machines)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 // GetMachine retrieves an Octopus machine by Id or slug.
 func (client *Client) GetMachine(idOrSlug string) (machine *Machine, err error) {
 	var (
@@ -58,7 +106,7 @@ func (client *Client) GetMachine(idOrSlug string) (machine *Machine, err error) 
 
 	responseBody, statusCode, err = client.executeRequest(request)
 	if err != nil {
-		err = fmt.Errorf("Error invoking request to read variable set '%s': %s", idOrSlug, err.Error())
+		err = fmt.Errorf("Error invoking request to read machine '%s': %s", idOrSlug, err.Error())
 
 		return
 	}
@@ -84,4 +132,32 @@ func (client *Client) GetMachine(idOrSlug string) (machine *Machine, err error) 
 	}
 
 	return
+}
+
+// GetMachineByName retrieves an Octopus machine by name from the set of all machines.
+func (client Client) GetMachineByName(name string) (result *Machine, found bool, err error) {
+	skip := 0
+	ok := true
+
+	for ok {
+		var machinesPage *Machines
+		machinesPage, err = client.GetMachines(skip)
+		if err != nil {
+			return
+		}
+
+		for _, machine := range machinesPage.Items {
+			if machine.HasName(name) {
+				result = &machine
+				found = true
+				return
+			}
+		}
+		skip, ok = machinesPage.GetSkipForNextPage()
+	}
+	return
+}
+
+func (machine Machine) HasName(name string) bool {
+	return strings.ToLower(machine.Name) == strings.ToLower(name)
 }
