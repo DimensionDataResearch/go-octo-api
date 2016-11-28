@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -16,7 +17,7 @@ import (
 
 // Client is the client for the Octopus Deploy API.
 type Client struct {
-	baseAddress string
+	baseAddress *url.URL
 	stateLock   *sync.Mutex
 	httpClient  *http.Client
 }
@@ -27,12 +28,12 @@ func NewClientWithAPIKey(serverURL string, apiKey string) (*Client, error) {
 		return nil, fmt.Errorf("Must specify a valid Octopus API key.")
 	}
 
-	if strings.LastIndex(serverURL, "/") != len(serverURL) {
-		serverURL += "/"
+	baseURL, err := url.Parse(serverURL)
+	if err != nil {
+		return nil, err
 	}
-
 	return &Client{
-		serverURL,
+		baseURL,
 		&sync.Mutex{},
 		&http.Client{
 			Transport: &apiKeyAuthenticator{
@@ -51,14 +52,25 @@ func (client *Client) Reset() {
 	// TODO: Do we actually keep any state in the Octopus client?
 }
 
+func normalizeURI(relativeURI string) (*url.URL, error) {
+	pathSegments := strings.Split(strings.TrimPrefix(relativeURI, "/"), "/")
+	if pathSegments[0] != "api" {
+		pathSegments = append([]string{"api"}, pathSegments...)
+	}
+	return url.Parse("/" + strings.Join(pathSegments, "/"))
+}
+
 // Create a request for the octopus API.
 func (client *Client) newRequest(relativeURI string, method string, body interface{}) (*http.Request, error) {
-	requestURI := fmt.Sprintf("%s/api/%s", client.baseAddress, relativeURI)
+	path, err := normalizeURI(relativeURI)
+	if err != nil {
+		return nil, err
+	}
+	requestURI := client.baseAddress.ResolveReference(path)
 
 	var (
 		request    *http.Request
 		bodyReader io.Reader
-		err        error
 	)
 
 	bodyReader, err = newReaderFromJSON(body)
@@ -66,7 +78,7 @@ func (client *Client) newRequest(relativeURI string, method string, body interfa
 		return nil, err
 	}
 
-	request, err = http.NewRequest(method, requestURI, bodyReader)
+	request, err = http.NewRequest(method, requestURI.String(), bodyReader)
 	if err != nil {
 		return nil, err
 	}
