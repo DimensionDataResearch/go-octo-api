@@ -158,6 +158,38 @@ func (client Client) GetMachineByName(name string) (result *Machine, found bool,
 	return
 }
 
+// DeleteMachine deletes a machine from the Octopus server
+func (client Client) DeleteMachine(machine *Machine) (err error) {
+	var (
+		request       *http.Request
+		statusCode    int
+		responseBody  []byte
+		errorResponse *APIErrorResponse
+	)
+
+	requestURI := machine.Links["Self"]
+	request, err = client.newRequest(requestURI, http.MethodDelete, nil)
+	if err != nil {
+		return err
+	}
+	responseBody, statusCode, err = client.executeRequest(request)
+	if err != nil {
+		return err
+	}
+
+	if statusCode != http.StatusOK {
+		errorResponse, err = readAPIErrorResponseAsJSON(responseBody, statusCode)
+		if err != nil {
+			return err
+		}
+
+		return errorResponse.ToError("Request to delete machine '%s' failed with status code %d", machine.ID, statusCode)
+	}
+
+	return nil
+}
+
+// HasName determines whether a machine has the specified name (case-insensitive)
 func (machine Machine) HasName(name string) bool {
 	return strings.ToLower(machine.Name) == strings.ToLower(name)
 }
